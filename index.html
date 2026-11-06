@@ -30,8 +30,9 @@ h1{margin:0;font-size:1.4rem}
 .progress div{height:100%;background:#10b981;width:0;transition:width .3s}
 .meta{text-align:center;font-size:.9rem;color:#6b7280;margin-bottom:10px}
 .card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);min-height:220px;white-space:pre-line;font-size:1.2rem;font-weight:700;line-height:2.2;text-align:center}
-.counter{margin:4px auto 14px;width:180px;height:56px;border-radius:12px;border:0;background:#10b981;color:#fff;font-family:inherit;font-size:1.6rem;font-weight:700;display:block;box-shadow:0 4px 12px rgba(16,185,129,.4)}
-.rep{display:inline-block;margin-top:6px;background:#f3f4f6;color:#9ca3af;border-radius:14px;padding:2px 10px;font-size:.75rem;font-weight:400}
+.counter{margin:4px auto 14px;width:180px;height:56px;border-radius:12px;border:0;background:#10b981;color:#fff;font-family:inherit;font-size:1.6rem;font-weight:700;display:block;box-shadow:0 4px 0 #0a8a60,0 6px 10px rgba(0,0,0,.2)}
+.counter:active{transform:translateY(4px);box-shadow:0 2px 0 #0a8a60,0 4px 8px rgba(0,0,0,.2)}
+.rep{display:inline-block;margin-top:6px;margin-bottom:0;background:#f3f4f6;color:#6b7280;border-radius:14px;padding:2px 10px;font-size:.85rem;font-weight:400}
 .plus10{display:block;margin:-4px auto 14px;border:0;border-radius:20px;padding:8px 24px;font-size:1.2rem;background:#d1fae5;color:#065f46;font-family:inherit;font-weight:700}
 .counter:active{transform:scale(.96)}
 .nav{display:flex;justify-content:space-between}
@@ -41,7 +42,7 @@ h1{margin:0;font-size:1.4rem}
 .card.quran.small{font-size:1rem;line-height:2}
 .sname{text-align:center;color:#059669;font-weight:700;font-size:.8rem;margin:-6px 0 8px}
 .isti{display:block;font-size:.8rem;font-weight:700;color:#6b7280}
-#installBtn2{background:#eef2f7;color:#8b5a2b;font-size:.75rem;font-weight:700;text-decoration:underline;padding:6px 10px;white-space:nowrap}
+#installBtn2{background:transparent;box-shadow:none;color:#8b5a2b;font-size:.75rem;font-weight:700;text-decoration:underline;padding:6px 10px;white-space:nowrap}
 .done{text-align:center;font-size:1.4rem;padding:40px 10px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px}
 .modal.show{display:flex}
@@ -64,7 +65,7 @@ h1{margin:0;font-size:1.4rem}
   <div class="sname" id="sname"></div>
   <div id="main">
     <div class="card" id="text"></div>
-    <div style="text-align:center"><span class="rep" id="rep"></span></div>
+    <div style="text-align:center;line-height:1.2"><span class="rep" id="rep"></span></div>
     <button class="counter" id="counter" onclick="tap()"></button>
     <button class="plus10" id="plus10" onclick="tap(10)">+10</button>
     <div class="nav">
@@ -319,7 +320,7 @@ function render(){
   document.getElementById('rep').textContent='التكرار: '+(W[z.c]||z.c+' مرات');
   document.getElementById('plus10').style.display=z.c>=100?'block':'none';
   document.getElementById('prevBtn').style.visibility=state.index===0?'hidden':'visible';
-  document.getElementById('nextBtn').style.visibility=state.index===list.length-1?'hidden':'visible';
+  var nb=document.getElementById('nextBtn');nb.style.visibility='visible';if(state.index===list.length-1){nb.textContent='خروج';nb.style.color='#dc2626';nb.onclick=exitApp;}else{nb.textContent='التالي';nb.style.color='';nb.onclick=function(){go(1)};}
   document.getElementById('meta').textContent='الذكر '+(state.index+1)+' من '+list.length;
   document.getElementById('bar').style.width=(state.index/list.length*100)+'%';
   save();
