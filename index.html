@@ -320,7 +320,7 @@ function render(){
   document.getElementById('rep').textContent='التكرار: '+(W[z.c]||z.c+' مرات');
   document.getElementById('plus10').style.display=z.c>=100?'block':'none';
   document.getElementById('prevBtn').style.visibility=state.index===0?'hidden':'visible';
-  var nb=document.getElementById('nextBtn');nb.style.visibility='visible';if(state.index===list.length-1){nb.textContent='خروج';nb.style.color='#dc2626';nb.onclick=exitApp;}else{nb.textContent='التالي';nb.style.color='';nb.onclick=function(){go(1)};}
+  var nb=document.getElementById('nextBtn');nb.style.visibility='visible';if(state.index===list.length-1){nb.textContent='خروج';nb.style.color='#dc2626';nb.onclick=function(){markFinished();exitApp();};}else{nb.textContent='التالي';nb.style.color='';nb.onclick=function(){go(1)};}
   document.getElementById('meta').textContent='الذكر '+(state.index+1)+' من '+list.length;
   document.getElementById('bar').style.width=(state.index/list.length*100)+'%';
   save();
