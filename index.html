@@ -49,6 +49,18 @@ h1{margin:0;font-size:1.4rem}
 .box{background:#fff;border-radius:16px;padding:22px;max-width:360px;text-align:center}
 .box button{font-family:inherit;display:block;width:100%;margin-top:10px;border:0;border-radius:10px;padding:10px;font-weight:700;font-size:1rem}
 .primary{background:#10b981;color:#fff}.secondary{background:#e5e7eb}
+
+.tap-bar{width:200px;height:5px;margin:8px auto 6px;border-radius:5px;background:#e5e7eb;overflow:hidden;display:flex;justify-content:flex-start}
+.tap-bar-seg{background:transparent;gap:3px;overflow:visible}
+.tap-bar-seg.many{gap:2px}
+.tap-bar-seg>span{flex:1;min-width:0;height:100%;background:#e5e7eb;border-radius:3px;overflow:hidden;display:flex;justify-content:flex-start}
+.tap-bar-seg .fill{height:100%;width:0;background:#3b82f6;border-radius:3px;flex:0 0 auto;transition:width .4s ease-out}
+.tap-bar-cont{overflow:hidden}
+.tap-bar-cont>div{height:100%;background:#3b82f6;width:0;flex:0 0 auto;border-radius:5px;transition:width .4s ease-out}
+.tap-bar.no-anim .fill,.tap-bar.no-anim>div{transition:none}
+#main,#sname,#meta{transition:opacity .25s ease}
+#main.fade,#sname.fade,#meta.fade{opacity:0;pointer-events:none}
+body.advancing .counter,body.advancing .plus10{pointer-events:none}
 </style>
 </head>
 <body>
@@ -66,6 +78,7 @@ h1{margin:0;font-size:1.4rem}
   <div id="main">
     <div class="card" id="text"></div>
     <div style="text-align:center;line-height:1.2"><span class="rep" id="rep"></span></div>
+    <div class="tap-bar" id="tapBar" aria-hidden="true"></div>
     <button class="counter" id="counter" onclick="tap()"></button>
     <button class="plus10" id="plus10" onclick="tap(10)">+10</button>
     <div class="nav">
@@ -294,6 +307,54 @@ function save(){ localStorage.setItem(KEY,JSON.stringify({...state,date:todayKey
 function markFinished(){ localStorage.setItem(KEY,JSON.stringify({...state,date:todayKey(),finished:true})); }
 function loadSaved(){ try{return JSON.parse(localStorage.getItem(KEY));}catch(e){return null;} }
 
+
+const TAP_BAR_SEG_MAX=33;
+const TAP_BAR_FILL_MS=400;
+const TAP_BAR_HOLD_MS=300;
+function setBarWidths(el,useSeg,total,filled){
+  if(useSeg){
+    const segs=el.children;
+    for(let i=0;i<segs.length;i++){
+      const fill=segs[i].firstElementChild;
+      if(fill) fill.style.width=i<filled?'100%':'0';
+    }
+  }else{
+    const f=el.firstElementChild;
+    if(f) f.style.width=(total?(filled/total*100):0)+'%';
+  }
+}
+function updateTapBar(total,filled,animate){
+  const el=document.getElementById('tapBar');
+  if(!el) return;
+  const useSeg=total<=TAP_BAR_SEG_MAX;
+  const mode=(useSeg?'seg-':'cont-')+total;
+  if(el.dataset.mode!==mode){
+    el.dataset.mode=mode;
+    el.className=useSeg?('tap-bar tap-bar-seg'+(total>10?' many':'')):'tap-bar tap-bar-cont';
+    el.innerHTML='';
+    if(useSeg){
+      for(let i=0;i<total;i++){
+        const s=document.createElement('span');
+        const f=document.createElement('span');
+        f.className='fill';
+        s.appendChild(f);
+        el.appendChild(s);
+      }
+    }else{
+      el.appendChild(document.createElement('div'));
+    }
+    animate=false;
+  }
+  if(!animate){
+    el.classList.add('no-anim');
+    setBarWidths(el,useSeg,total,filled);
+    void el.offsetWidth;
+    el.classList.remove('no-anim');
+    return;
+  }
+  el.classList.remove('no-anim');
+  setBarWidths(el,useSeg,total,filled);
+}
 function render(){
   const list=AZKAR[state.type];
   const hdr=document.getElementById('hdr');
@@ -319,22 +380,64 @@ function render(){
   const W={1:'مرة واحدة',3:'ثلاث مرات',4:'أربع مرات',7:'سبع مرات',10:'عشر مرات',100:'مائة مرة'};
   document.getElementById('rep').textContent='التكرار: '+(W[z.c]||z.c+' مرات');
   document.getElementById('plus10').style.display=z.c>=100?'block':'none';
+  updateTapBar(z.c,state.count,false);
   document.getElementById('prevBtn').style.visibility=state.index===0?'hidden':'visible';
   var nb=document.getElementById('nextBtn');nb.style.visibility='visible';if(state.index===list.length-1){nb.textContent='خروج';nb.style.color='#dc2626';nb.onclick=function(){markFinished();exitApp();};}else{nb.textContent='التالي';nb.style.color='';nb.onclick=function(){go(1)};}
   document.getElementById('meta').textContent='الذكر '+(state.index+1)+' من '+list.length;
   document.getElementById('bar').style.width=(state.index/list.length*100)+'%';
   save();
 }
+let advancing=false;
+function setAdvancing(on){
+  advancing=!!on;
+  document.body.classList.toggle('advancing',advancing);
+}
+function fadeSwap(done){
+  const ids=['main','sname','meta'];
+  ids.forEach(function(id){ const el=document.getElementById(id); if(el) el.classList.add('fade'); });
+  setTimeout(function(){
+    done();
+    requestAnimationFrame(function(){
+      ids.forEach(function(id){ const el=document.getElementById(id); if(el) el.classList.remove('fade'); });
+    });
+  },250);
+}
 function tap(step){
-  const z=AZKAR[state.type][state.index];
+  if(advancing) return;
+  const list=AZKAR[state.type];
+  if(state.index>=list.length) return;
+  const z=list[state.index];
   state.count=Math.min(z.c,state.count+(step||1));
   if(navigator.vibrate) navigator.vibrate(30);
-  if(state.count>=z.c){ state.index++; state.count=0; }
-  render();
+  const cEl=document.getElementById('counter');
+  if(cEl) cEl.textContent=String(z.c-state.count);
+  updateTapBar(z.c,state.count,true);
+  if(state.count>=z.c){
+    setAdvancing(true);
+    const nextIndex=state.index+1;
+    if(nextIndex>=list.length) markFinished();
+    else localStorage.setItem(KEY,JSON.stringify({type:state.type,index:nextIndex,count:0,date:todayKey(),finished:false}));
+    setTimeout(function(){
+      fadeSwap(function(){
+        state.index=nextIndex;
+        state.count=0;
+        render();
+        setTimeout(function(){ setAdvancing(false); },250);
+      });
+    },TAP_BAR_FILL_MS+TAP_BAR_HOLD_MS);
+    return;
+  }
+  save();
 }
-function go(d){ state.index=Math.max(0,Math.min(AZKAR[state.type].length-1,state.index+d)); state.count=0; render(); }
+function go(d){
+  if(advancing) return;
+  state.index=Math.max(0,Math.min(AZKAR[state.type].length-1,state.index+d)); state.count=0; render();
+}
 const mainHTML=document.getElementById('main').innerHTML;
-function switchTo(type){ document.getElementById('main').innerHTML=mainHTML; state={type,index:0,count:0}; render(); }
+function switchTo(type){
+  if(advancing) return;
+  document.getElementById('main').innerHTML=mainHTML; state={type,index:0,count:0}; render();
+}
 
 function exitApp(){
   window.close();
