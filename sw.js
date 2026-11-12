@@ -1,4 +1,4 @@
-const C='azkar-v17';
+const C='azkar-v18';
 const FILES=['./','./index.html','./manifest.json','./icons/icon-192.png','./icons/icon-512.png'];
 const KEEP=new Set([C,'azkar-flags']);
 
